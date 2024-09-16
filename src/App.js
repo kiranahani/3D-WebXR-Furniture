@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { ARButton } from "three/examples/jsm/webxr/ARButton";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { XREstimatedLight } from "three/examples/jsm/webxr/XREstimatedLight";
+import { useState, useEffect, useRef } from "react";
 
 function App() {
   let reticle;
@@ -10,34 +11,45 @@ function App() {
   let hitTestSourceRequested = false;
 
   let scene, camera, renderer;
+  const handleBackButtonClick = () => {
+    window.location.href = 'https://loettaliving.com/'; // Replace with the URL you want to navigate to
+  };
 
   let models = [
-    "./dylan_armchair_yolk_yellow.glb",
-    "./ivan_armchair_mineral_blue.glb",
-    "./marble_coffee_table.glb",
-    "./flippa_functional_coffee_table_w._storagewalnut.glb",
-    "./frame_armchairpetrol_velvet_with_gold_frame.glb",
-    "./elnaz_nesting_side_tables_brass__green_marble.glb",
-  ];
-  let modelScaleFactor = [0.01, 0.01, 0.005, 0.01, 0.01, 0.01];
+    "./Rheina-Chair.glb", 
+    "./Round-Table.glb", 
+    "./Renata-Square-Dining-Table.glb", 
+    "./Lala-Chair.glb", 
+    "./Almira-Bar-Table.glb", 
+    "./Renata-Big-Recta-Dining-Table.glb", 
+    "./Rama-Big-Round-Table.glb", 
+    "./Alma-Chair.glb", 
+    "./Deva-Round-SIde-Table.glb", 
+    "./High-Baack-Stool.glb", 
+    "./Indian-Barstool.glb", 
+    "./Lily-Side-Chair.glb", 
+    "./Jungle-Side-Table.glb", 
+    "./Rama-Small-Round-Table.glb", 
+    "./Renata-Side-Table.glb",
+    "./Altha-Chair.glb",
+    "./Lulu-Chair.glb"]
+  let modelScaleFactor = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
   let items = [];
   let itemSelectedIndex = 0;
 
   let controller;
+  const [hitTestVisible, setHitTestVisible] = useState(true);
 
-  init();
-  setupFurnitureSelection();
-  animate();
+  useEffect(() => {
+    init();
+    setupFurnitureSelection();
+    animate();
+  }, []);
 
   function init() {
     let myCanvas = document.getElementById("canvas");
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(
-      70,
-      myCanvas.innerWidth / myCanvas.innerHeight,
-      0.01,
-      20
-    );
+    camera = new THREE.PerspectiveCamera(70, myCanvas.innerWidth / myCanvas.innerHeight, 0.01, 20);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     light.position.set(0.5, 1, 0.25);
@@ -69,9 +81,6 @@ function App() {
       // Swap the lights back when we stop receiving estimated values
       scene.add(light);
       scene.remove(xrLight);
-
-      // Revert back to the default environment
-      // scene.environment =
     });
 
     let arButton = ARButton.createButton(renderer, {
@@ -79,7 +88,7 @@ function App() {
       optionalFeatures: ["dom-overlay", "light-estimation"],
       domOverlay: { root: document.body },
     });
-    arButton.style.bottom = "20%";
+    arButton.style.bottom = "22%";
     document.body.appendChild(arButton);
 
     for (let i = 0; i < models.length; i++) {
@@ -94,10 +103,7 @@ function App() {
     controller.addEventListener("select", onSelect);
     scene.add(controller);
 
-    reticle = new THREE.Mesh(
-      new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial()
-    );
+    reticle = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial());
     reticle.matrixAutoUpdate = false;
     reticle.visible = false;
     scene.add(reticle);
@@ -107,22 +113,18 @@ function App() {
     if (reticle.visible) {
       let newModel = items[itemSelectedIndex].clone();
       newModel.visible = true;
-      // this one will set the position but not the rotation
-      // newModel.position.setFromMatrixPosition(reticle.matrix);
-
-      // this will set the position and the rotation to face you
-      reticle.matrix.decompose(
-        newModel.position,
-        newModel.quaternion,
-        newModel.scale
-      );
+      
+      // Set posisi dan rotasi berdasarkan reticle
+      reticle.matrix.decompose(newModel.position, newModel.quaternion, newModel.scale);
+  
+      // Set skala model ke nilai yang diinginkan, jika diperlukan
       let scaleFactor = modelScaleFactor[itemSelectedIndex];
       newModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
+  
       scene.add(newModel);
     }
   }
-
+  
   const onClicked = (e, selectItem, index) => {
     itemSelectedIndex = index;
 
@@ -161,11 +163,9 @@ function App() {
 
       if (hitTestSourceRequested === false) {
         session.requestReferenceSpace("viewer").then(function (referenceSpace) {
-          session
-            .requestHitTestSource({ space: referenceSpace })
-            .then(function (source) {
-              hitTestSource = source;
-            });
+          session.requestHitTestSource({ space: referenceSpace }).then(function (source) {
+            hitTestSource = source;
+          });
         });
 
         session.addEventListener("end", function () {
@@ -183,9 +183,10 @@ function App() {
           const hit = hitTestResults[0];
 
           reticle.visible = true;
-          reticle.matrix.fromArray(
-            hit.getPose(referenceSpace).transform.matrix
-          );
+          reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+
+          // Hide the "scanning" message when hit test results are available
+          setHitTestVisible(false);
         } else {
           reticle.visible = false;
         }
@@ -195,7 +196,22 @@ function App() {
     renderer.render(scene, camera);
   }
 
-  return <div className="App"></div>;
+  return (
+    <div className="App">
+      <canvas id="canvas"></canvas>
+
+      {/* Back Button */}
+      <button className="back-button" onClick={handleBackButtonClick}>
+        Back
+      </button>
+
+      {hitTestVisible && (
+        <div className="scanning-message">
+          <div className="typing-text">Our System is Scanning Your Surface Now</div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default App;
